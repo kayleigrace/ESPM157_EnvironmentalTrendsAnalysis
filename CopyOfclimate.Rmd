@@ -1,0 +1,344 @@
+---
+title: "Climate Exercise"
+author: "Keili Prenton & Kaylei Nilson"
+output: github_document
+---
+
+
+
+# Climate Change Analysis
+
+## Examining CO2 trends in R
+
+- Example from <http://climate.nasa.gov/vital-signs/carbon-dioxide/>
+- Raw data from <ftp://aftp.cmdl.noaa.gov/products/trends/co2/co2_mm_mlo.txt>
+
+```{r message=FALSE}
+library(tidyverse)
+```
+
+```{r message=FALSE}
+
+co2 <- 
+read_table("https://raw.githubusercontent.com/espm-157/climate-template/master/assignment/co2_mm_mlo.txt", 
+                  comment="#",
+                  col_names = c("year", "month", "decimal_date", "average",
+                                "interpolated", "trend", "days"),
+                  na = c("-1", "-99.99"))
+co2
+```
+
+
+```{r}
+ggplot(co2, aes(x = decimal_date, y = average)) + geom_line() 
+
+```
+
+Which months are the CO2 values at the maximum? Minimum?  Why is this?
+- CO2 values are at a maximum in colder/winter months and at a minimum in warmer months. This is because in the warmer months plants are more active and photosynthesize more so they are pulling more CO2 from the atmosphere compared to winter months. 
+
+What rolling average is used in computing the "trend" line?  How does the trend depend on the rolling average?
+- The rolling averages of monthly CO2 levels are used to create the "trend" line. When plotted the rolling averages show the overall trend for each year (zig-zag pattern) and for the duration of the study (generally increasing).
+
+------------------------
+
+# Temperature Data
+
+Each of the last years has consecutively set new records on global climate.  In this section we will analyze global mean temperature data.
+
+Data from: <http://climate.nasa.gov/vital-signs/global-temperature>
+
+## Question 1:
+
+Describe the data set to the best of your ability given the documentation provided.  Describe what kind of column each data contains and what units it is measured in.  Then address our three key questions in understanding this data:
+
+The data set documents annual average surface temperatures from 1880 to 2019, using the averages from 1951-1980 as the base line. The fist column defines the years of the data set which are from 1880 to 2019. One of the columns of the data set is No_Smooth which is the raw data on the global surface temperature over the years. The other column is Lowess which is data smoothing that allows the trends or patterns over the years to show up more clearly. The No_Smooth and Lowess columns are measured in degrees celsius units. 
+
+- How are the measurements made? What is the associated measurement uncertainty?
+  -Data on temperatures is collected from NASA's metrological stations and ocean areas. Error in incomplete spatial and temporal variations may contribute to uncertainty. Additionally, some of the metrological stations encounter urban warming which could also contibute to uncertainty in the accuracy of these measurements; however, other methods are used to try to account for this.
+
+- What is the resolution of the data?
+- Are their missing values? How should they be handled?
+
+## Question 2: 
+
+Construct the necessary R code to import and prepare for manipulation the following data set: <http://climate.nasa.gov/system/internal_resources/details/original/647_Global_Temperature_Data_File.txt>
+
+```{r}
+temp<- read_table("http://climate.nasa.gov/system/internal_resources/details/original/647_Global_Temperature_Data_File.txt", 
+                  skip = 5,
+                  col_names = c("Year", "No_Smoothing", "Lowess"))
+temp
+```
+
+## Question 3:
+
+Plot the trend in global mean temperatures over time.  Describe what you see in the plot and how you interpret the patterns you observe.
+```{r}
+temp %>%
+  ggplot(aes(x=Year)) +
+  geom_line(aes(y=No_Smoothing), col ="blue") +
+  geom_line(aes(y=Lowess), col="green", size = 1.3) 
+```
+While there are ups and downs over the years, there is a general increase in average global temperature. There is a steep increase in the rate of global warming beginning in the later half of the 1900s. This trend is roughly seen with he raw, unsmoothed data (shown in blue) and in confirmed with the smoothed data (shown in green). 
+
+## Question 4: Evaluating the evidence for a "Pause" in warming?
+
+The [2013 IPCC Report](https://www.ipcc.ch/pdf/assessment-report/ar5/wg1/WG1AR5_SummaryVolume_FINAL.pdf) included a tentative observation of a "much smaller increasing trend" in global mean temperatures since 1998 than was observed previously.  This led to much discussion in the media about the existence of a "Pause" or "Hiatus" in global warming rates, as well as much research looking into where the extra heat could have gone.  (Examples discussing this question include articles in [The Guardian](http://www.theguardian.com/environment/2015/jun/04/global-warming-hasnt-paused-study-finds), [BBC News](http://www.bbc.com/news/science-environment-28870988), and [Wikipedia](https://en.wikipedia.org/wiki/Global_warming_hiatus)). 
+
+By examining the data here, what evidence do you find or not find for such a pause?  Present an analysis of this data (using the tools & methods we have covered in Foundation course so far) to argue your case.  
+
+What additional analyses or data sources would better help you refine your arguments?
+
+```{r}
+pause<- read_table("http://climate.nasa.gov/system/internal_resources/details/original/647_Global_Temperature_Data_File.txt", 
+                  skip = 110,
+                  col_names = c("Year", "No_Smoothing", "Lowess"))
+pause
+```
+```{r}
+pause_subset <- pause[c(18:29), c(1,3)]
+pause_subset
+```
+```{r}
+ggplot()+geom_line(data=pause, aes(x=Year,y=Lowess), col="Blue")+geom_line(data=pause_subset, aes(x=Year, y=Lowess), col ="Green", size = 1.5)
+```
+When looking at all the data the overall increasing trend is easy to see. However, if only recent data is taken into account (up to 2013 when the claims were made) there looks like there is a plateau is overall warming. Highlighted in green, the decade leading up to 2013 experienced minimal warming but directly outside of that time boundary the dramatic increasing trend is still seen. The claim that there was a "pause" is technically correct, as seen with the plateau in global temperature increase. This does not mean the global warming has stopped.
+
+Overall there was a temporary pause in the drastic rate of global warming seen prior to the early 2000s. Further anaylsis of the rate of increase can be done to confirm this. However, this does not indicate any permanent pause or validation that efforts to mitigate climate change can be stopped. When looking at the overall trend of warming, the years leading up to the 2000s and 2010s, and other "pauses" in climate change show that the short "pause" noticed in 2013 doesn't mean anything significant in climate change efforts. 
+
+## Question 5: Rolling averages
+    
+- What is the meaning of "5 year average" vs "annual average"?
+  - A 5 year average averages annual average over 5 year periods and plot those points. Annual averages average smaller time periods (i.e monthly) data and produce an aveage for that year.
+
+- Construct 5 year averages from the annual data.  Construct 10 & 20-year averages. 
+```{r}
+library(zoo)
+```
+```{r}
+rolling <- temp %>%
+  select(Year, No_Smoothing) %>%
+  mutate(five = rollmean(No_Smoothing, k = 5, fill=NA),
+         ten = rollmean(No_Smoothing, k = 10, fill=NA),
+         twenty = rollmean(No_Smoothing, k = 20, fill=NA))
+
+rolling
+```
+
+
+- Plot the different averages and describe what differences you see and why.  
+
+```{r}
+rolling %>%
+  gather(metric, value, No_Smoothing:twenty) %>%
+  ggplot(aes(Year, value, color = metric))+ geom_line()
+```
+
+As larger averages are taken the smoother the data gets. By taking the average over a period of time, outlier values are slowly removed leading to less eratic overall averages. Although less of a complete view of the data, taking these rolling averages allows for general trends to easily be identified and visualized. 
+
+
+# Exercise II: Melting Ice Sheets?
+
+- Data description: <http://climate.nasa.gov/vital-signs/land-ice/>
+- Raw data file: <http://climate.nasa.gov/system/internal_resources/details/original/499_GRN_ANT_mass_changes.csv>
+
+## Question 1:
+
+- Describe the data set: what are the columns and units? Where do the numbers come from? 
+  - The data consists of a year column, an Antarctic ice sheet mass column, and a Greenland ice sheet mass column. The years are broken down to decimal values, thus is the values are at a finer scale then annual measurements. The mass columns look at gigatonnes of mass of the respective area's ice sheets.
+- What is the uncertainty in measurment? Resolution of the data? Interpretation of missing values?
+  - Although the resolution of the data goes down to decimals there is still uncertainty in what happens in the time between measurements as well as the complete accuracy of the mass measurements. There doesn't seem to be missing values. 
+
+
+## Question 2:
+
+Construct the necessary R code to import this data set as a tidy `Table` object.
+```{r}
+ice_sheets <- read_csv("http://climate.nasa.gov/system/internal_resources/details/original/499_GRN_ANT_mass_changes.csv", 
+                  skip = 10,
+                  col_names = c("time", "greenland_mass", "antarctica_mass"))
+ice_sheets
+```
+
+
+## Question 3:
+
+Plot the data and describe the trends you observe.
+```{r}
+ice_sheets %>%
+  gather(location,mass, greenland_mass, antarctica_mass) %>% 
+  ggplot(aes(x=time, y=mass, col = location)) + geom_line()
+```
+Both ice sheets have been rapidly diminishing from the start of the data collection of this set. Both experience increases and decreases but have a general decreasing trend. The Greenland ice sheet is experiencing a faster rate of decrease than the Antarctic ice sheet. 
+
+
+# Exercise III: Rising Sea Levels?
+
+- Data description: <http://climate.nasa.gov/vital-signs/sea-level/>
+- Raw data file: <http://climate.nasa.gov/system/internal_resources/details/original/121_Global_Sea_Level_Data_File.txt>
+
+
+## Question 1:
+
+- Describe the data set: what are the columns and units? 
+- Where do these data come from? 
+- What is the uncertainty in measurment? Resolution of the data? Interpretation of missing values?
+
+The data set looks at the average global sea level variation over the years and portions of a year (years measured to the decimal place). Sea level is measured in mm, starting in 1993. There are various iterations of the raw data, that smooth it out. Standard deviations and other statistics (i.e number of observations) are also included. Measurements are collected by both ground level gauges and satellitles. There does not seem to any missing values. Uncertainty comes from sea level variability and possible inaccuracy in measurement. The uncertainty value is +/- 4mm. 
+
+## Question 2:
+
+Construct the necessary R code to import this data set as a tidy `Table` object.
+```{r}
+sea_levels_raw <- read_table("http://climate.nasa.gov/system/internal_resources/details/original/121_Global_Sea_Level_Data_File.txt", 
+                  skip = 45,
+                  col_names = c("frequency_type", "merged_file_cycle_number", "year","no_of_obs","no_of_weighted_obs","GMSL_variation_noGIA","SD_GMSL_variation_noGIA","smoothed_GMSL_variation_noGIA","GMSL_variation_withGIA","SD_GMSL_variation_withGIA","smoothed_GMSL_variation_withGIA","smoothed_GMSL_variation_withGIA_nosignal"))
+sea_levels_raw
+```
+```{r}
+sea_levels<-sea_levels_raw[c(1:847),c(3,12)]
+sea_levels
+```
+## Question 3:
+
+Plot the data and describe the trends you observe.
+```{r}
+ggplot(sea_levels, aes(x = year, y = smoothed_GMSL_variation_withGIA_nosignal)) + geom_line()
+```
+Despite local increases and decreases there is an overall, drastic increase in global mean sea levels. The most refined data column is used to calculate the graph above and is shown in red below. Even in the less smooth iterations of the data, the same general increasing trend is still seen. See below for the other iterations shown with the GMSL variation (smoothed, with GIA, signal removed) seen above.  
+
+```{r}
+sea_levels_raw %>%
+  ggplot(aes(x=year)) +
+  geom_line(aes(y=GMSL_variation_noGIA)) +
+  geom_line(aes(y=smoothed_GMSL_variation_noGIA))+
+  geom_line(aes(y=GMSL_variation_withGIA))+
+  geom_line(aes(y=smoothed_GMSL_variation_withGIA))+
+  geom_line(aes(y=smoothed_GMSL_variation_withGIA_nosignal), col= "red", size = 1.25)
+```
+
+
+
+# Exercise IV: Arctic Sea Ice?
+
+- <http://nsidc.org/data/G02135>
+- <ftp://sidads.colorado.edu/DATASETS/NOAA/G02135/north/daily/data/N_seaice_extent_daily_v3.0.csv>
+
+
+## Question 1:
+
+- Describe the data set: what are the columns and units? 
+- Where do these data come from? 
+- What is the uncertainty in measurement? Resolution of the data? Interpretation of missing values?
+
+- This data looks at changes in sea ice extent in the Arctic and Antarctic. Sea ice extent describes how much of the ocean is covered in a layer of ice. The data displays the day, month, and year for each data recording. The data set includes data from November 1978 to present day. The data includes  columns "extent," and "missing," which are recorded in 10^6 sq km. The column "extent" is the data used to visualize the change in the sea ice layer. 
+- This data comes from the National Snow and Ice Data Center and the data contributers listed are Florence Fetter, Kenneth Knowles, Walter Meier, Matthew Savoie, and Ann Windnagel. 
+- The data provides daily and monthly entries, but the day-to-day variations are often more uncertain because they are the result of short-term weather. The solution to this is to give more consideration to monthly averages which are better for long-term trend analysis. The spatial resolution of the data is 25 km x 25 km. The missing column has 0 inputs.
+
+## Question 2:
+
+Construct the necessary R code to import this data set as a tidy `Table` object.
+
+```{r}
+sea_ice_raw <- read_csv("N_seaice_extent_daily_v3.0.csv",
+                  skip= 2,
+                  col_names = c("Year", "Month", "Day", "Extent", "Missing", "Source Data"))
+sea_ice_raw
+```
+
+```{r}
+sea_ice_raw_date <- sea_ice_raw %>% 
+  mutate(date = as.Date(paste(Year, Month, Day,sep="-"))) 
+sea_ice_raw_date
+```
+```{r}
+avg_extent <- summarise(
+    group_by (sea_ice_raw_date, Year),
+    avg_extent= mean(Extent))
+avg_extent
+```
+
+
+## Question 3:
+
+Plot the data and describe the trends you observe.    
+```{r}
+avg_extent %>%
+  ggplot(aes(x=Year , y=avg_extent)) + geom_line() 
+  
+```
+
+This graph depicts sea ice extent change over the years 1980-2020. The data set provides daily and monthly reccordings; however, I averaged each year's data information so that the trend in the graph was easier to see. As the visualization shows, the average sea ice extent per year has been declining, with a substative decline occuring between 2000-2010. In 2020, the sea ice extent appears to be increasing. I believe this could be due to awareness of the sea ice extent declining and collaborative efforts by researchers and policy makers to try to defy this trend and restore sea ice extent.
+
+# Exercise V: Longer term trends in CO2 Records
+
+
+The data we analyzed in the unit introduction included CO2 records dating back only as far as the measurements at the Manua Loa observatory.  To put these values into geological perspective requires looking back much farther than humans have been monitoring atmosopheric CO2 levels.  To do this, we need another approach.
+
+
+[Ice core data](http://cdiac.ornl.gov/trends/co2/ice_core_co2.html):
+
+Vostok Core, back to 400,000 yrs before present day 
+
+- Description of data set: <http://cdiac.esd.ornl.gov/trends/co2/vostok.html>
+- Data source: <http://cdiac.ornl.gov/ftp/trends/co2/vostok.icecore.co2>
+
+## Questions / Tasks:
+
+- Describe the data set: what are the columns and units? Where do the numbers come from? 
+- What is the uncertainty in measurment? Resolution of the data? Interpretation of missing values?
+
+- Read in and prepare data for analysis.
+```{r}
+Co <- read_tsv("https://cdiac.ess-dive.lbl.gov/ftp/trends/co2/vostok.icecore.co2",
+                  skip=21, 
+                  col_names= c("Depth(m)", "Age_of_the_ice(yrBP)", "Mean_age_of _the_air(yrBP)", "Co2_concentration(ppmv)"))
+Co
+```
+
+- Reverse the ordering to create a chronological record.  
+- Plot data
+
+```{r}
+chron <- Co %>% arrange(desc(`Age_of_the_ice(yrBP)`))
+chron
+```
+
+```{r}
+chron %>%
+  ggplot(aes(x=`Age_of_the_ice(yrBP)` , y=`Co2_concentration(ppmv)`)) + geom_line() 
+```
+
+```{r}
+chron_renamed <- mutate(chron, year = `Age_of_the_ice(yrBP)` * (-1))
+ice_age_co2 <- chron_renamed %>% select (year, `Co2_concentration(ppmv)`)
+ice_age_co2
+```
+
+```{r}
+co2_renamed <- mutate(co2, `Co2_concentration(ppmv)`= average)
+maunaloa_co2 <- co2_renamed %>% select (year, `Co2_concentration(ppmv)`)
+maunaloa_co2
+```
+
+
+- Consider various smoothing windowed averages of the data. 
+- Join this series to Mauna Loa data
+
+```{r}
+combined <- rbind(ice_age_co2, maunaloa_co2)
+combined
+```
+
+- Plot joined data
+
+```{r}
+combined %>%
+  ggplot(aes(x=`year` , y=`Co2_concentration(ppmv)`)) + geom_line() 
+```
+
+- Describe your conclusions
+This visualization combines both the Mauna Loa and Ice Core data sets to show a continuation of the Co2 concentrations over the years. This allows us to see the general trend of Co2 concentration throughout history. As discussed earlier, the up and down trends of Co2 concentration occur in different seasons when plants are either photosynthesizing more or less during those seasons. This graph depicts an abnormal increase in Co2 concentration during present day time. This shift is likely due to human causes that have disrupted the natural cycles.
+
+
